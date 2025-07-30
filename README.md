@@ -9,6 +9,16 @@ An interactive, browser-based simulator designed to help students and profession
 * **Transmission Modes**: Animate Simplex, Half‑Duplex, and Full‑Duplex communication between two nodes.
 * **Lightweight & Standalone**: Pure HTML, CSS, and JavaScript—no dependencies or build steps.
 
+## 📁 Project Structure
+
+```bash
+network-simulator/
+├── network_simulation.html   # Main interactive simulator page
+├── README.md                 # Project documentation and instructions
+├── LICENSE                   # MIT License
+└── .gitignore                # Files to ignore in Git
+```
+
 ## 🖥️ Getting Started
 
 ### Prerequisites
