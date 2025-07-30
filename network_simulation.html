@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Fundamentals Simulator</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    section { margin-bottom: 40px; }
+    svg { border: 1px solid #ccc; background: #f9f9f9; }
+    .node { fill: #4CAF50; stroke: #333; stroke-width: 1px; }
+    .link { stroke: #999; stroke-width: 2px; }
+    .highlight { stroke: #FF5722 !important; stroke-width: 4px !important; }
+    .packet { fill: #FF5722; }
+    label, select, button { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Network Fundamentals Simulator</h1>
+
+  <section id="topology-section">
+    <h2>Topology Simulation</h2>
+    <label for="topologySelect">Choose Topology:</label>
+    <select id="topologySelect">
+      <option value="star">Star</option>
+      <option value="bus">Bus</option>
+      <option value="ring">Ring</option>
+      <option value="mesh">Mesh</option>
+    </select>
+    <svg id="topoSvg" width="600" height="300"></svg>
+  </section>
+
+  <section id="device-section">
+    <h2>Device Simulation (Star Network)</h2>
+    <label for="deviceSelect">Device Type:</label>
+    <select id="deviceSelect">
+      <option value="hub">Hub (Broadcast)</option>
+      <option value="switch">Switch (Learned Forwarding)</option>
+    </select>
+    <label for="srcNode">From:</label>
+    <select id="srcNode"></select>
+    <label for="dstNode">To:</label>
+    <select id="dstNode"></select>
+    <button id="sendPacketBtn">Send Packet</button>
+    <svg id="devSvg" width="600" height="300"></svg>
+  </section>
+
+  <section id="transmission-section">
+    <h2>Transmission Mode Simulation</h2>
+    <label><input type="radio" name="mode" value="simplex" checked> Simplex</label>
+    <label><input type="radio" name="mode" value="half"> Half-Duplex</label>
+    <label><input type="radio" name="mode" value="full"> Full-Duplex</label>
+    <button id="transmitBtn">Transmit</button>
+    <svg id="txSvg" width="600" height="100"></svg>
+  </section>
+
+  <script>
+    // Utility to clear an SVG
+    function clear(svg) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+    }
+
+    // Topology Simulation
+    const topoSvg = document.getElementById('topoSvg');
+    document.getElementById('topologySelect').addEventListener('change', drawTopology);
+    drawTopology();
+
+    function drawTopology() {
+      clear(topoSvg);
+      const type = document.getElementById('topologySelect').value;
+      let coords = [];
+
+      if (type === 'star') {
+        coords.push({x:300,y:150}); // center
+        for (let i=0; i<5; i++) {
+          const angle = i * 2*Math.PI/5 - Math.PI/2;
+          coords.push({x:300 + 100*Math.cos(angle), y:150 + 100*Math.sin(angle)});
+        }
+        coords.slice(1).forEach(c => {
+          let line = document.createElementNS('http://www.w3.org/2000/svg','line');
+          line.setAttribute('x1', coords[0].x);
+          line.setAttribute('y1', coords[0].y);
+          line.setAttribute('x2', c.x);
+          line.setAttribute('y2', c.y);
+          line.setAttribute('class','link');
+          topoSvg.appendChild(line);
+        });
+      }
+      else if (type === 'bus') {
+        for (let i=0; i<6; i++) coords.push({x:100 + 80*i, y:150});
+        let backbone = document.createElementNS('http://www.w3.org/2000/svg','line');
+        backbone.setAttribute('x1', coords[0].x);
+        backbone.setAttribute('y1', coords[0].y);
+        backbone.setAttribute('x2', coords[5].x);
+        backbone.setAttribute('y2', coords[5].y);
+        backbone.setAttribute('class','link');
+        topoSvg.appendChild(backbone);
+      }
+      else if (type === 'ring' || type === 'mesh') {
+        for (let i=0; i<6; i++) {
+          const angle = i * 2*Math.PI/6 - Math.PI/2;
+          coords.push({x:300 + 100*Math.cos(angle), y:150 + 100*Math.sin(angle)});
+        }
+        coords.forEach((c,i) => {
+          if (type === 'ring') {
+            const next = coords[(i+1)%6];
+            let line = document.createElementNS('http://www.w3.org/2000/svg','line');
+            line.setAttribute('x1', c.x);
+            line.setAttribute('y1', c.y);
+            line.setAttribute('x2', next.x);
+            line.setAttribute('y2', next.y);
+            line.setAttribute('class','link');
+            topoSvg.appendChild(line);
+          } else if (type === 'mesh') {
+            coords.forEach((d,j) => {
+              if (j>i) {
+                let line = document.createElementNS('http://www.w3.org/2000/svg','line');
+                line.setAttribute('x1', c.x);
+                line.setAttribute('y1', c.y);
+                line.setAttribute('x2', d.x);
+                line.setAttribute('y2', d.y);
+                line.setAttribute('class','link');
+                topoSvg.appendChild(line);
+              }
+            });
+          }
+        });
+      }
+
+      // Draw nodes
+      coords.forEach((c, i) => {
+        let circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circ.setAttribute('cx', c.x);
+        circ.setAttribute('cy', c.y);
+        circ.setAttribute('r', 15);
+        circ.setAttribute('class','node');
+        topoSvg.appendChild(circ);
+
+        let txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+        txt.setAttribute('x', c.x);
+        txt.setAttribute('y', c.y+5);
+        txt.setAttribute('text-anchor','middle');
+        txt.setAttribute('font-size','12px');
+        txt.textContent = i+1;
+        topoSvg.appendChild(txt);
+      });
+    }
+
+    // Device Simulation (Star network with hub vs switch)
+    const devSvgEl = document.getElementById('devSvg');
+    const srcNode = document.getElementById('srcNode');
+    const dstNode = document.getElementById('dstNode');
+    const deviceType = document.getElementById('deviceSelect');
+    const sendBtn = document.getElementById('sendPacketBtn');
+
+    let starCoords = [];
+    function setupDeviceSim() {
+      // compute star coords same as topology
+      starCoords = [{x:300,y:150}];
+      for (let i=0; i<5; i++) {
+        const angle = i * 2*Math.PI/5 - Math.PI/2;
+        starCoords.push({x:300 + 100*Math.cos(angle), y:150 + 100*Math.sin(angle)});
+      }
+      // populate selects
+      [srcNode, dstNode].forEach(sel => {
+        sel.innerHTML = '';
+        starCoords.forEach((_,i)=>{
+          let opt = document.createElement('option'); opt.value = i; opt.textContent = 'Node '+(i+1);
+          sel.appendChild(opt);
+        });
+      });
+      drawDevice();
+    }
+    function drawDevice() {
+      clear(devSvgEl);
+      // draw links
+      starCoords.slice(1).forEach(c=>{
+        let line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', starCoords[0].x);
+        line.setAttribute('y1', starCoords[0].y);
+        line.setAttribute('x2', c.x);
+        line.setAttribute('y2', c.y);
+        line.setAttribute('class','link');
+        devSvgEl.appendChild(line);
+      });
+      // draw nodes
+      starCoords.forEach((c,i)=>{
+        let circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circ.setAttribute('cx', c.x);
+        circ.setAttribute('cy', c.y);
+        circ.setAttribute('r', 15);
+        circ.setAttribute('class','node');
+        devSvgEl.appendChild(circ);
+        let txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+        txt.setAttribute('x', c.x);
+        txt.setAttribute('y', c.y+5);
+        txt.setAttribute('text-anchor','middle');
+        txt.setAttribute('font-size','12px');
+        txt.textContent = i+1;
+        devSvgEl.appendChild(txt);
+      });
+    }
+    sendBtn.addEventListener('click', ()=>{
+      // clear highlights
+      devSvgEl.querySelectorAll('.link').forEach(l=>l.classList.remove('highlight'));
+      let type = deviceType.value;
+      let s = parseInt(srcNode.value), d = parseInt(dstNode.value);
+      if (type === 'hub') {
+        // broadcast: highlight all
+        devSvgEl.querySelectorAll('.link').forEach(l=>l.classList.add('highlight'));  
+      } else {
+        // switch: forward on path
+        if (s === 0 || d === 0) {
+          // one is center: highlight that link
+          let nodes = [s,d].filter(n=>n!==0);
+          let idx = nodes[0]-1;
+          devSvgEl.querySelectorAll('.link')[idx].classList.add('highlight');
+        } else {
+          // two hops: src->center and center->dst
+          devSvgEl.querySelectorAll('.link')[s-1].classList.add('highlight');
+          devSvgEl.querySelectorAll('.link')[d-1].classList.add('highlight');
+        }
+      }
+    });
+    setupDeviceSim();
+
+    // Transmission Mode Simulation
+    const txSvgEl = document.getElementById('txSvg');
+    document.getElementById('transmitBtn').addEventListener('click', simulateTx);
+    // draw static link and nodes
+    let left = {x:150,y:50}, right={x:450,y:50};
+    (function drawLink(){
+      let line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', left.x); line.setAttribute('y1', left.y);
+      line.setAttribute('x2', right.x); line.setAttribute('y2', right.y);
+      line.setAttribute('class','link'); txSvgEl.appendChild(line);
+      [left,right].forEach((c,i)=>{
+        let circ=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circ.setAttribute('cx', c.x); circ.setAttribute('cy', c.y);
+        circ.setAttribute('r', 12); circ.setAttribute('class','node');
+        txSvgEl.appendChild(circ);
+        let txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+        txt.setAttribute('x', c.x); txt.setAttribute('y', c.y+5);
+        txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','12px');
+        txt.textContent = i===0?'A':'B'; txSvgEl.appendChild(txt);
+      });
+    })();
+    function animatePacket(from, to, cb) {
+      let pkt = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      pkt.setAttribute('r',8); pkt.setAttribute('class','packet');
+      pkt.setAttribute('cx', from.x); pkt.setAttribute('cy', from.y);
+      txSvgEl.appendChild(pkt);
+      let steps = 60, count=0;
+      let dx=(to.x-from.x)/steps, dy=(to.y-from.y)/steps;
+      let iv = setInterval(()=>{
+        count++;
+        let cx = parseFloat(pkt.getAttribute('cx'))+dx;
+        let cy = parseFloat(pkt.getAttribute('cy'))+dy;
+        pkt.setAttribute('cx',cx); pkt.setAttribute('cy',cy);
+        if(count>=steps) { clearInterval(iv); txSvgEl.removeChild(pkt); if(cb) cb(); }
+      },20);
+    }
+    function simulateTx(){
+      let mode = document.querySelector('input[name="mode"]:checked').value;
+      if(mode==='simplex') animatePacket(left,right);
+      else if(mode==='half') animatePacket(left,right, ()=>animatePacket(right,left));
+      else if(mode==='full') { animatePacket(left,right); animatePacket(right,left); }
+    }
+  </script>
+</body>
+</html>
