@@ -51,38 +51,53 @@ network-simulator/
 ## 🌐 Deploying with GitHub Pages
 
 1. Push the repository to GitHub under the name `network-simulator`.
-2. In your repository’s **Settings > Pages**, select the **main** branch and `/ (root)` folder.
-3. Save; the simulator will be available at:
+2. **Ensure you have an `index.html` file in the root:**
+
+   * GitHub Pages looks for `index.html` by default. You can either:
+
+     * **Rename** `network_simulation.html` to `index.html`, or
+     * **Add** a simple `index.html` that redirects or links to `network_simulation.html`.
+3. In your repository’s **Settings > Pages**, select the **main** branch and `/ (root)` folder as the source.
+4. Save; the simulator will be available at:
 
    ```
+   https://<your-username>.github.io/network-simulator/
    ```
 
-https\://<your-username>.github.io/network-simulator/network\_simulation.html
-
-```
+> **Tip:** If you’d rather keep `network_simulation.html` named as is, create a minimal `index.html` such as:
+>
+> ```html
+> <!DOCTYPE html>
+> <html>
+> <head>
+>   <meta http-equiv="refresh" content="0;url=network_simulation.html">
+> </head>
+> <body>
+>   <p>Redirecting to the simulator... <a href="network_simulation.html">Click here</a> if you aren’t redirected.</p>
+> </body>
+> </html>
+> ```
 
 ## 🎓 How to Use
 
-1. **Choose a topology** from the dropdown to see nodes and links drawn automatically.  
-2. **Select a device type** (Hub or Switch), pick source/destination nodes, and click **Send Packet** to observe traffic behavior.  
+1. **Choose a topology** from the dropdown to see nodes and links drawn automatically.
+2. **Select a device type** (Hub or Switch), pick source/destination nodes, and click **Send Packet** to observe traffic behavior.
 3. **Switch transmission modes** (Simplex, Half‑Duplex, Full‑Duplex) and click **Transmit** to animate packet flow.
 
 Use this tool to demonstrate how different network designs and devices impact performance, reliability, and traffic flow.
 
 ## 🔧 Customization
 
-- **Add more nodes** by editing the `starCoords` array in the JavaScript.  
-- **Adjust styling** via the `<style>` section in the HTML.  
-- **Extend the simulator** to include VLANs, QoS, or other advanced features.
+* **Add more nodes** by editing the `starCoords` array in the JavaScript.
+* **Adjust styling** via the `<style>` section in the HTML.
+* **Extend the simulator** to include VLANs, QoS, or other advanced features.
 
 ## 📚 References
 
-- Kurose, J. F., & Ross, K. W. (2017). *Computer Networking: A Top-Down Approach* (7th ed.). Pearson.  
-- Tanenbaum, A. S., & Wetherall, D. J. (2011). *Computer Networks* (5th ed.). Pearson.  
-- Bombal, D. (n.d.). *Network basics, topologies, and devices* [YouTube videos].
+* Kurose, J. F., & Ross, K. W. (2017). *Computer Networking: A Top-Down Approach* (7th ed.). Pearson.
+* Tanenbaum, A. S., & Wetherall, D. J. (2011). *Computer Networks* (5th ed.). Pearson.
+* Bombal, D. (n.d.). *Network basics, topologies, and devices* \[YouTube videos].
 
 ## 📝 License
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
-
-```
